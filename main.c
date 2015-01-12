@@ -1,4 +1,8 @@
-// Basic brainfuck interpreter
+/*
+ * bfc - Basic brainfuck interpreter
+ * Basic brainfuck interpreter written in C for educational purposes.
+ *
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,22 +11,20 @@
 #define MAX_STACK_SIZE 1024
 #define MAX_MEM_SIZE   30000
 
-// Print the help file
+// Print basic help
 void print_help()
 {
-    fprintf(stderr, "usage: bfi <filename>");
+    fprintf(stderr, "usage: bfc <filename>\n");
 }
 
 int main(int argc, char *argv[])
 {
-    // Check a file name is given
     if(argc != 2)
     {
         print_help();
         return -1;
     }
 
-    // Open the file
     FILE *f = fopen(argv[1], "r");
 
     if(f == NULL)
@@ -31,12 +33,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // Get the size of the file
+    // Get file size
     fseek(f, 0, SEEK_END);
     size_t fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    // Contains the entire program in memory
+    // Load the program into memory
     char *program = malloc((sizeof(char) * fsize) + 1);
     if(program == NULL)
     {
@@ -44,33 +46,26 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // Load the program
     fread(program, fsize, 1, f);
     program[fsize] = '\0';
     fclose(f);
 
-    // The program pointer
+    // Instruction pointer
     char *pptr = program;
 
-    // Memory accessed by the program
-    int8_t array[MAX_MEM_SIZE];
-
-    // The memory pointer
-    int8_t *ptr = array;
-
-    // the char being handled
-    char c;
+    // The "tape"
+    uint8_t array[MAX_MEM_SIZE];
+    uint8_t *ptr = array;
 
     // The loop stack
     char *stack[MAX_STACK_SIZE];
     size_t stack_size = 0;
 
-    // Evaluate until the end of the program
+    // Evaluate until last instruction
     while(*pptr != '\0') 
     {
-        c = *pptr;
-       
-        switch(c)
+        // Handle each character
+        switch(*pptr)
         {
             case '>':
                 ++ptr;
@@ -103,10 +98,13 @@ int main(int argc, char *argv[])
                     stack[stack_size] = pptr;
                     stack_size++;
                 }
+                // otherwise skip until ']'
                 else
                 {
-                    while((c = *pptr) != ']')
+                    while(*pptr != ']')
+                    {
                         ++pptr;
+                    }
                 }
                 break;
 
@@ -114,15 +112,15 @@ int main(int argc, char *argv[])
                 // jumps back to '[' unless *(ptr) = 0
                 if(*ptr)
                 {
-                    pptr = stack[stack_size - 1]; 
-                    stack_size--;
-                    pptr--;
+                    pptr = stack[--stack_size]; 
+                    pptr--; // Account for incrementing later
                 }
                 break;
 
             default:
                 break;
         }
+
         // Increment program pointer
         pptr++;
     }
